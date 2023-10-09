@@ -6,6 +6,7 @@ from pybricks.parameters import Port, Stop, Direction, Button, Color
 from pybricks.tools import wait, StopWatch, DataLog
 from pybricks.robotics import DriveBase
 from pybricks.media.ev3dev import SoundFile, ImageFile
+from umqtt.robust import MQTTClient
 import time
 
 
@@ -22,32 +23,32 @@ left_motor = Motor(Port.B)
 right_motor = Motor(Port.C)
 
 robot=DriveBase(left_motor,right_motor,wheel_diameter=54,axle_track=105)
-CSensor=ColorSensor(Port.S3)
-TSensor=TouchSensor(Port.S1)
-time_end = time.time() + 5
-count = 0
-blue_line = red_line = black_line = 0
-colors = []
 
-while time.time() < time_end:
-    robot.drive(50, 0)
-    color = CSensor.color()
-    if color == Color.BLACK or color == Color.BLUE or  color == Color.RED:
-        colors.append(color)
-    time.sleep(0.25)
-robot.stop() 
+MQTT_ClientID='a'
+MQTT_Broker='192.168.53.51'
+MQTT_Topic_Status='Lego/Status'
+client=MQTTClient(MQTT_ClientID,MQTT_Broker,1883)
+
+def listen(topic,msg):
+    if topic==MQTT_Topic_Status.encode():
+        ev3.screen.print(str(msg.decode()))
+
+UltraSensor=UltrasonicSensor(Port.S4)
+
+while UltraSensor.distance() > 100:
+    robot.drive(100, 0)
+robot.stop()
+
+client.connect()
+time.sleep(0.5)
+client.publish(MQTT_Topic_Status,'Drive forward!')
+ev3.screen.print('Started')
+
+
 
 while True:
-    if TSensor.pressed():
-        for x in colors:
-            if x == Color.BLACK:
-                ev3.speaker.beep(frequency=523.25)
-            elif x == Color.RED:
-                ev3.speaker.beep(frequency=293.665)
-            elif x == Color.BLUE:
-                ev3.speaker.beep(frequency=329.628)
-            print(x)
-            time.sleep(0.175)
+    client.check_msg()
+    time.sleep(0.5)
           
 
 
