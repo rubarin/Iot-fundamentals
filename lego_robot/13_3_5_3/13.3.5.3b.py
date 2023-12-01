@@ -22,28 +22,44 @@ ev3 = EV3Brick()
 left_motor = Motor(Port.B)
 right_motor = Motor(Port.C)
 
-robot=DriveBase(left_motor,right_motor,wheel_diameter=54,axle_track=105)
+robot=DriveBase(left_motor, right_motor, wheel_diameter=54, axle_track=105)
 
-MQTT_ClientID='a'
-MQTT_Broker='192.168.73.51'
-MQTT_Topic_Status='Lego/Status'
-client=MQTTClient(MQTT_ClientID,MQTT_Broker,1883)
+UltraSensor = UltrasonicSensor(Port.S4)
+
+
+MQTT_ClientID = 'b'
+MQTT_Broker = '192.168.73.51'
+MQTT_Topic_Status = 'Lego/Status'
+client = MQTTClient(MQTT_ClientID, MQTT_Broker, 1883)
+
 
 def listen(topic,msg):
-    if topic==MQTT_Topic_Status.encode():
-        if str(msg.decode()) == "3 drive":
+    if topic == MQTT_Topic_Status.encode():
+        ev3.screen.print(str(msg.decode()))
+        if str(msg.decode()) == '2 drive':       
             while UltraSensor.distance() > 100:
                 robot.drive(100, 0)
             robot.stop()
-            client.publish(MQTT_Topic_Status,'1 drive')
+            client.publish(MQTT_Topic_Status, '3 drive') 
+            
+            
 
-UltraSensor=UltrasonicSensor(Port.S4)
+
 
 client.connect()
 time.sleep(0.5)
+#client.publish(MQTT_Topic_Status, 'hello world')
+ev3.screen.print('Started')
 client.set_callback(listen)
 client.subscribe(MQTT_Topic_Status)
+time.sleep(0.5)
+client.publish(MQTT_Topic_Status, 'Listening') 
+ev3.screen.print('Listening')
 
-while True:
-    client.check_msg()
+while True :
+    client.check_msg() 
     time.sleep(0.5)
+
+   
+
+

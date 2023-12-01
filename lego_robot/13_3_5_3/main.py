@@ -25,31 +25,37 @@ right_motor = Motor(Port.C)
 robot=DriveBase(left_motor,right_motor,wheel_diameter=54,axle_track=105)
 
 MQTT_ClientID='a'
-MQTT_Broker='192.168.57.51'
+MQTT_Broker='192.168.73.51'
 MQTT_Topic_Status='Lego/Status'
 client=MQTTClient(MQTT_ClientID,MQTT_Broker,1883)
 
 def listen(topic,msg):
     if topic==MQTT_Topic_Status.encode():
-        ev3.screen.print(str(msg.decode()))
+        if str(msg.decode()) == "1 drive":
+            while UltraSensor.distance() > 100:
+                robot.drive(100, 0)
+            robot.stop()
+            client.publish(MQTT_Topic_Status,'2 drive')
 
+UltraSensor=UltrasonicSensor(Port.S4)
 
 client.connect()
 time.sleep(0.5)
-ev3.screen.print('Started')
+client.set_callback(listen)
+client.subscribe(MQTT_Topic_Status)
 
-
+while UltraSensor.distance() > 100:
+    robot.drive(100, 0)
+    time.sleep(1)
+robot.stop()
+client.publish(MQTT_Topic_Status,'2 drive')
 
 while True:
     client.check_msg()
     time.sleep(0.5)
-    if len(ev3.buttons.pressed()) > 0:
-        if (ev3.buttons.pressed() == [Button.CENTER]):
-            client.publish(MQTT_Topic_Status,'Forward')
-        elif (ev3.buttons.pressed() == [Button.LEFT]):
-            client.publish(MQTT_Topic_Status,'Left')
-        elif (ev3.buttons.pressed() == [Button.LEFT]):
-            client.publish(MQTT_Topic_Status,'Right')
+
+          
+    
 
           
 

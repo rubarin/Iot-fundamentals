@@ -6,8 +6,9 @@ from pybricks.parameters import Port, Stop, Direction, Button, Color
 from pybricks.tools import wait, StopWatch, DataLog
 from pybricks.robotics import DriveBase
 from pybricks.media.ev3dev import SoundFile, ImageFile
-from umqtt.robust import MQTTClient 
+from umqtt.robust import MQTTClient
 import time
+
 
 # This program requires LEGO EV3 MicroPython v2.0 or higher.
 # Click "Open user guide" on the EV3 extension tab for more information.
@@ -17,41 +18,40 @@ import time
 ev3 = EV3Brick()
 
 
+# Write your program here.
+left_motor = Motor(Port.B)
+right_motor = Motor(Port.C)
 
-#MQTT setup
-MQTT_ClientID = 'testmqtt'
-MQTT_Broker = '172.20.10.4'
+robot=DriveBase(left_motor, right_motor, wheel_diameter=54, axle_track=105)
+
+
+MQTT_ClientID = 'b'
+MQTT_Broker = '172.20.10.3'
 MQTT_Topic_Status = 'Lego/Status'
 client = MQTTClient(MQTT_ClientID, MQTT_Broker, 1883)
 
-#cqllbqck
+
 def listen(topic,msg):
     if topic == MQTT_Topic_Status.encode():
         ev3.screen.print(str(msg.decode()))
-        robotName = 'B' #here you can change the name of the robot
-        arrayNote = str(msg.decode()).split(',')
-        if(arrayNote[0] == robotName):
-            ev3.light.on(Color.RED)
-            tailleNote = arrayNote[1]
-            noteAjouer = robotName + '4/' + tailleNote
-            ev3.speaker.play_notes([noteAjouer])
-            resulting_string = ','.join(arrayNote[2:])
-            client.publish(MQTT_Topic_Status, resulting_string)
-        else:
-            ev3.light.on(Color.GREEN)
+        if str(msg.decode()) == 'Drive forward!':       
+            robot.drive(100, 0)
+            time.sleep(3)
 
 
-# Write your program here.
 
-
-# Write your program here.
-client.connect() 
+client.connect()
+time.sleep(0.5)
+#client.publish(MQTT_Topic_Status, 'hello world')
+ev3.screen.print('Started')
 client.set_callback(listen)
 client.subscribe(MQTT_Topic_Status)
-ev3.speaker.beep()
+time.sleep(0.5)
+client.publish(MQTT_Topic_Status, 'Listening') 
+ev3.screen.print('Listening')
 
 while True:
-    client.check_msg()
-
+    client.check_msg() 
+    time.sleep(0.5)
 
 
